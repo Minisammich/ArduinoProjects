@@ -5,8 +5,11 @@ bool mBrake = false;
 
 bool currDirection = CW;
 
-bool runningState = false;
+bool runningState = true;
+bool onLine = false;
 
+int counter = 0;
+int distanceFrom;
 int startDelay = 5000;
 
 void setup() {
@@ -29,26 +32,40 @@ void setup() {
   pinMode(lineSensor_2,INPUT);
   pinMode(lineSensor_3,INPUT);
 
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
   pinMode(motorPin_1,OUTPUT);
   pinMode(motorPin_2,OUTPUT);
   pinMode(motorPin_3,OUTPUT);
   pinMode(motorPin_4,OUTPUT);
+
+  Serial.begin(9600);
 }
 
 void loop() {
-  mvFwd(100);
-  delay(1000);
-  stopMotors();
-  delay(1000);
-}
-
-void motorAccelTest() {
-  accelMotors(CW,100,10,100);
-  delay(1000);
-  accelMotors(CW,100,100,0);
-  m1(CW,0,0);
-  m2(CW,0,0);
-  delay(1000);
+  if(runningState == false) {
+    buttonPressed();
+  } else {
+    lineSensors(25,250);
+    if(onLine == false) {
+      ultrasonicSensor();
+      if(distanceFrom <= 30) {
+        mvFwd(75);
+        delay(150);
+        counter = 0;
+      } else {
+        if(counter < 150) {
+          mvFwd(20);
+        } else if(counter < 160) {
+          tnLt(30);
+        } else {
+          counter = 0;
+        }
+      }
+    }
+    counter++;
+  }
 }
 
 void ultrasonicSensor() { // Sequence when a robot is spotted.
@@ -65,33 +82,58 @@ void ultrasonicSensor() { // Sequence when a robot is spotted.
   duration = pulseIn(echoPin, HIGH);
   // Calculating the distance
   distance = duration * 0.034 / 2;
-  return(distance);
+  distanceFrom = distance;
 }
 
-void lineSensors() { // Sequence for line avoidance.
-  if(digitalRead(lineSensor_1) == HIGH && digitalRead(lineSensor_2) == HIGH) {
+void lineSensors(int speed, int ms) { // Sequence for line avoidance.
+  if(digitalRead(lineSensor_1) == HIGH && digitalRead(lineSensor_2) == HIGH) { // Front Two.
+    onLine = true;
+    mvBwd(100);
+    delay(ms*2);
+    bwLt(100);
+    delay(ms/2);
+  } else if(digitalRead(lineSensor_3) == HIGH && digitalRead(lineSensor_1) == HIGH) { // Front Left and Back.
+    onLine = true;
+    tnRt(speed);
+    delay(ms);
+  } else if(digitalRead(lineSensor_3) == HIGH && digitalRead(lineSensor_2) == HIGH) { // Front Right and Back.
+    onLine = true;
+    tnLt(speed);
+    delay(ms);
+  } else if(digitalRead(lineSensor_3) == HIGH) { // Just Back.
+    onLine = true;
     mvFwd(100);
-  } else if(digitalRead(lineSensor_3 == HIGH) && digitalRead(lineSensor_1) == HIGH) {
-    
+    delay(ms);
+  } else if(digitalRead(lineSensor_1) == HIGH) { // Just Left.
+    onLine = true;
+    tnShRt(speed);
+    delay(ms);
+  } else if(digitalRead(lineSensor_2) == HIGH) { // Just Right.
+    onLine = true;
+    tnShLt(speed);
+    delay(ms);
+  } else { // No Line Detected.
+    onLine = false;
   }
   
 }
 
 void buttonPressed() { // Starting button delay and LED flashing sequence.
   if(digitalRead(buttonPin) == LOW) {
-    for(int i = startDelay; i > 0; i--) {
-      if(i & 2 == 0) {
-        digitalWrite(LED_PIN, HIGH);
-      } else {
-        digitalWrite(LED_PIN, LOW);
-      }
-      if(i == 0) {
-        runningState = true;
-      }
-    }
-  } 
+    digitalWrite(LED_PIN, HIGH);
+    delay(1000);
+    digitalWrite(LED_PIN, LOW);
+    delay(1000);
+    digitalWrite(LED_PIN, HIGH);
+    delay(1000);
+    digitalWrite(LED_PIN, LOW);
+    delay(1000);
+    digitalWrite(LED_PIN, HIGH);
+    delay(1000);
+    digitalWrite(LED_PIN, LOW);
+  }
   runningState = true;
-}
+} 
 
 void m1(bool direction, int speed, bool mState) {
   int pwm = map(speed,0,100,0,255); // Makes it more user friendly... 0 -> 100% maps to: 0 -> 255.
@@ -146,9 +188,24 @@ void tnRt(int speed) { // Turn Right Indefinitely.
   m2(CW, 0, mBrake);
 }
 
+void tnShRt(int speed) { // Turn Sharply Right Indefinitely.
+  m1(CW, speed, mRun);
+  m2(CCW, speed, mRun);
+}
+
 void tnLt(int speed) { // Turn Left Indefinitely.
   m1(CW, 0, mBrake);
   m2(CW, speed, mRun);
+}
+
+void tnShLt(int speed) { // Turn Sharply Right Indefinitely.
+  m1(CCW, speed, mRun);
+  m2(CW, speed, mRun);
+}
+
+void bwLt(int speed) {
+  m1(CW, 0, mBrake);
+  m2(CCW, speed, mRun);
 }
 
 void stopMotors() {
