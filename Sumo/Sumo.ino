@@ -27,6 +27,10 @@ void setup() {
 
   #define buttonPin 7
   #define LED_PIN 8
+
+  pinMode(buttonPin,OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(A0, INPUT);
   
   pinMode(lineSensor_1,INPUT);
   pinMode(lineSensor_2,INPUT);
@@ -41,6 +45,8 @@ void setup() {
   pinMode(motorPin_4,OUTPUT);
 
   Serial.begin(9600);
+
+  digitalWrite(buttonPin, HIGH);
 }
 
 void loop() {
@@ -119,7 +125,7 @@ void lineSensors(int speed, int ms) { // Sequence for line avoidance.
 }
 
 void buttonPressed() { // Starting button delay and LED flashing sequence.
-  if(digitalRead(buttonPin) == HIGH) {
+  if(digitalRead(A0) == HIGH) {
     for(int i = 0; i < 5; i++){
       digitalWrite(LED_PIN, HIGH);
       delay(500);
