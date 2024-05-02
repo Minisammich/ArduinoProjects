@@ -5,7 +5,7 @@ bool mBrake = false;
 
 bool currDirection = CW;
 
-bool runningState = true;
+bool runningState = false;
 bool onLine = false;
 
 int counter = 0;
@@ -119,20 +119,15 @@ void lineSensors(int speed, int ms) { // Sequence for line avoidance.
 }
 
 void buttonPressed() { // Starting button delay and LED flashing sequence.
-  if(digitalRead(buttonPin) == LOW) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(1000);
-    digitalWrite(LED_PIN, LOW);
-    delay(1000);
-    digitalWrite(LED_PIN, HIGH);
-    delay(1000);
-    digitalWrite(LED_PIN, LOW);
-    delay(1000);
-    digitalWrite(LED_PIN, HIGH);
-    delay(1000);
-    digitalWrite(LED_PIN, LOW);
+  if(digitalRead(buttonPin) == HIGH) {
+    for(int i = 0; i < 5; i++){
+      digitalWrite(LED_PIN, HIGH);
+      delay(500);
+      digitalWrite(LED_PIN, LOW);
+      delay(500);
+    }
+    runningState = true;
   }
-  runningState = true;
 } 
 
 void m1(bool direction, int speed, bool mState) {
